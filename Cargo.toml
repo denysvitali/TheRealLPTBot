@@ -6,3 +6,5 @@ authors = ["Denys Vitali <denys@denv.it>"]
 [dependencies]
 curl = "0.4.0"
 yaml-rust = "*"
+base64 = "0.6.0"
+serde_json = "1.0.2"
