@@ -1,7 +1,7 @@
 [package]
 name = "lptbot"
 version = "0.1.0"
-authors = ["Denys Vitali <denys.vitali@coelis.ch>"]
+authors = ["Denys Vitali <denys@denv.it>"]
 
 [dependencies]
 curl = "0.4.0"
