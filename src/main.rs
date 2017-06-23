@@ -120,8 +120,9 @@ fn login(username : &str, password : &str, appid: &str, secret: &str){
         println!("Access Token: {}", access_token);
     }
 
-    get_me(access_token);
-    get_lpt();
+    //get_me(access_token);
+    //get_lpt();
+    get_comments("6ixc7g");
 }
 
 fn get_me(access_token : &str){
@@ -224,6 +225,13 @@ fn get_comments(lpt_id: &str) -> Vec<Value> {
 }
 
 fn parse_child(parent: &serde_json::Value){
+    if !parent.is_object() {
+        return;
+    }
+    if parent["kind"].as_str().unwrap() != "t1" {
+        return;
+    }
+    
     let bodyText = parent["data"]["body"].as_str().unwrap();
 
     let comment_children = parent["data"]["replies"]["data"]["children"].as_array();
@@ -231,6 +239,9 @@ fn parse_child(parent: &serde_json::Value){
     match comment_children {
         Some(some) => {
             for j in some {
+                if j["kind"].as_str().unwrap() != "t1" {
+                    continue;
+                }
                 let childText = j["data"]["body"].as_str().unwrap();
                 if re.is_match(childText) {
                     println!("The Real LPT: {}", bodyText);
