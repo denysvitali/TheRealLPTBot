@@ -5,3 +5,4 @@ authors = ["Denys Vitali <denys@denv.it>"]
 
 [dependencies]
 curl = "0.4.0"
+yaml-rust = "*"
