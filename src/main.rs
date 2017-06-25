@@ -21,7 +21,7 @@ use regex::Regex;
 const VERSION: &'static str = "0.1";
 const DEBUG: bool = false;
 const SUBREDDIT_SOURCE: &'static str = "denvit";
-const SUBREDDIT_DEST: &'static str = "LifeProTips";
+const SUBREDDIT_DEST: &'static str = "denvit2";
 
 
 fn main() {
@@ -121,8 +121,8 @@ fn login(username : &str, password : &str, appid: &str, secret: &str){
     }
 
     //get_me(access_token);
-    //get_lpt();
-    get_comments("6ixc7g");
+    get_lpt();
+    //get_comments("6jff5s");
 }
 
 fn get_me(access_token : &str){
@@ -182,14 +182,14 @@ fn get_lpt(){
         if re.is_match(title) {
             // It is a LPT, load comments
             println!("\n====\nID: {}\nTitle: {}\n====\n", id, title);
-            let comments = get_comments(id);
+            let comments = get_comments(id, title);
         }
     }
 
     //println!("{:?}", v["data"]);
 }
 
-fn get_comments(lpt_id: &str) -> Vec<Value> {
+fn get_comments(lpt_id: &str, title: &str) -> Vec<Value> {
     let rv = Vec::new();
 
     let mut easy = Easy::new();
@@ -217,42 +217,73 @@ fn get_comments(lpt_id: &str) -> Vec<Value> {
     let children = v[1]["data"]["children"].as_array().unwrap();
 
     for i in children {
-        parse_child(i);
-        //println!("=============\n\n");
+        let result = parse_child(i);
+        for j in result {
+            match j {
+                Some(val) => {
+                    parse_real_lpt(val[0], val[1], lpt_id, title);
+                },
+
+                _ => {}
+            }
+        }
     }
 
     rv
 }
 
-fn parse_child(parent: &serde_json::Value){
+fn parse_child(parent: &serde_json::Value) -> Vec<Option<Vec<&serde_json::Value>>> {
     if !parent.is_object() {
-        return;
+        return vec![None];
     }
     if parent["kind"].as_str().unwrap() != "t1" {
-        return;
+        return vec![None];
     }
-    
-    let bodyText = parent["data"]["body"].as_str().unwrap();
+
+    let body_text = parent["data"]["body"].as_str().unwrap();
+    let parent_obj = &parent["data"];
 
     let comment_children = parent["data"]["replies"]["data"]["children"].as_array();
     let re = Regex::new(r"(?i)real lpt is always in the comments").unwrap();
+
+    let mut retVec = Vec::new();
+
     match comment_children {
         Some(some) => {
             for j in some {
                 if j["kind"].as_str().unwrap() != "t1" {
                     continue;
                 }
-                let childText = j["data"]["body"].as_str().unwrap();
-                if re.is_match(childText) {
-                    println!("The Real LPT: {}", bodyText);
+                let child_text = j["data"]["body"].as_str().unwrap();
+                if re.is_match(child_text) {
+                    let mut rval = Vec::new();
+                    rval.push(parent_obj);
+                    rval.push(j);
+                    retVec.push(Some(rval));
                 }
                 else{
-                    parse_child(j);
+                    let res = parse_child(j);
+                    for i in res {
+                        retVec.push(i);
+                    }
                 }
             }
         },
         _ => {},
     };
+
+    return retVec;
+}
+
+fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id: &str, title: &str){
+    let body_text = lpt["body"].as_str().unwrap();
+    let v: Vec<&str> = body_text.split("\n").collect();
+    let real_lpt_short = v[0];
+    println!("The RSLPT: {}", real_lpt_short);
+    println!("Found in {} ({})", lpt_id, title);
+
+    
+    //println!("Comment: {:?}", comment);
 }
 
 fn get_ua() -> String {
