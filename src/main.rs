@@ -3,6 +3,7 @@ extern crate yaml_rust;
 extern crate base64;
 extern crate serde_json;
 extern crate regex;
+extern crate url;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -14,12 +15,13 @@ use std::process;
 use curl::easy::{Easy, List};
 use yaml_rust::{YamlLoader};
 use serde_json::Value;
+use url::form_urlencoded;
 
 use regex::Regex;
 
 const VERSION: &'static str = "0.1";
 const DEBUG: bool = false;
-const SUBREDDIT_SOURCE: &'static str = "denvit";
+const SUBREDDIT_SOURCE: &'static str = "LifeProTips";
 const SUBREDDIT_DEST: &'static str = "denvit2";
 
 
@@ -65,8 +67,20 @@ fn main() {
         println!();
     }
 
-    login(&username, &password, &appid, &secret);
+    println!("Logging in...");
 
+    let access_token = &login(&username, &password, &appid, &secret).expect("Unable to login");
+
+    if DEBUG {
+        println!("Login successful, access token: {}", access_token);
+    } else {
+        println!("Succesfully logged in");
+    }
+
+    //get_me(access_token);
+    //get_lpt();
+    //get_comments("6jlha9", "LPT: If you deal with multiple clients, figure out how they take their coffee and take notes. When meeting with them, get them coffee how they like it. It sets the meeting up to start on a good note.");
+    post_selftext(SUBREDDIT_DEST, "Test", "Hello Reddit", access_token);
 
     //let url = "https://google.com/";
     //let mut easy = Easy::new();
@@ -77,7 +91,7 @@ fn main() {
     //easy.perform().unwrap();
 }
 
-fn login(username : &str, password : &str, appid: &str, secret: &str){
+fn login(username : &str, password : &str, appid: &str, secret: &str) -> Option<String> {
 
     if DEBUG { println!("Performing authentication..."); }
     let data = format!("grant_type=password&username={}&password={}", username, password);
@@ -119,9 +133,7 @@ fn login(username : &str, password : &str, appid: &str, secret: &str){
         println!("Access Token: {}", access_token);
     }
 
-    //get_me(access_token);
-    get_lpt();
-    //get_comments("6jff5s");
+    Some(String::from(access_token))
 }
 
 fn get_me(access_token : &str){
@@ -283,6 +295,47 @@ fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id:
 
 
     //println!("Comment: {:?}", comment);
+}
+
+fn post_selftext(subreddit : &str, title : &str, text : &str, access_token : &str){
+    let mut easy = Easy::new();
+    easy.url("https://oauth.reddit.com/api/submit").unwrap();
+    easy.post(true).unwrap();
+
+    let data : String = form_urlencoded::Serializer::new(String::new())
+        .append_pair("api_type", "json")
+        .append_pair("kind", "self")
+        .append_pair("sr", subreddit)
+        .append_pair("title", title)
+        .append_pair("text", text)
+        .finish();
+
+    let mut data = data.as_bytes();
+
+    let mut resp = Vec::new();
+
+    let mut list = List::new();
+    list.append("Content-Type: application/x-www-form-urlencoded").unwrap();
+    list.append(&format!("Authorization: bearer {}", access_token)).unwrap();
+    list.append(&format!("User-Agent: {}", get_ua())).unwrap();
+
+
+    easy.post_field_size(data.len() as u64).unwrap();
+    easy.http_headers(list).unwrap();
+    {
+        let mut transfer = easy.transfer();
+        transfer.read_function(|buf| {
+            Ok(data.read(buf).unwrap_or(0))
+        }).unwrap();
+        transfer.write_function(|data| {
+            Ok(resp.write(data).unwrap())
+        }).unwrap();
+        transfer.perform().unwrap();
+    }
+
+
+    let response = String::from_utf8(resp).unwrap();
+    println!("{:?}", response);
 }
 
 fn get_ua() -> String {
