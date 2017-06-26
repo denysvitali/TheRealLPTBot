@@ -335,8 +335,7 @@ fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id:
     println!("The RSLPT: {}", real_lpt_short);
     println!("Found in {} ({})", lpt_id, title);
 
-    let mut found = false;
-    let mut post = Post{
+        let mut post = Post{
         id: String::new(),
         lpt_tid: String::from(lpt_id),
         lpt_cid: String::from(lpt["id"].as_str().unwrap()),
@@ -348,9 +347,11 @@ fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id:
         rlpt_poster: String::from(lpt["author"].as_str().unwrap())
     };
     let mut exists = false;
-    conn.query_row("SELECT lpt_tcid FROM posts WHERE lpt_tcid=?", &[&post.lpt_tcid], |row| {
+    match conn.query_row("SELECT lpt_tcid FROM posts WHERE lpt_tcid=?", &[&post.lpt_tcid], |row| {
         exists = true;
-    }).unwrap();
+    }) {
+        _ => ()
+    };
 
     if !exists{
         println!("Posting...");
@@ -359,13 +360,6 @@ fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id:
         conn.execute("INSERT INTO posts (id, lpt_tid, lpt_cid, lpt_tcid, posted_on, lpt_title, rlpt_text, lpt_poster, rlpt_poster) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         &[&post.id, &post.lpt_tid, &post.lpt_cid, &post.lpt_tcid, &post.posted_on, &post.lpt_title, &post.rlpt_text, &post.lpt_poster, &post.rlpt_poster]).expect("???");
     }
-
-    if !found {
-
-    }
-
-    return;
-    //println!("Comment: {:?}", comment);
 }
 
 fn post_selftext(subreddit : &str, title : &str, text : &str, access_token : &str) -> String {
