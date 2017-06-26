@@ -9,11 +9,10 @@ use std::io::prelude::*;
 
 use std::path::Path;
 
-use std::io::{stdout, Write, Result};
+use std::io::{Write};
 use std::process;
-use std::str::FromStr;
-use curl::easy::{Easy, Form, List};
-use yaml_rust::{YamlLoader, YamlEmitter};
+use curl::easy::{Easy, List};
+use yaml_rust::{YamlLoader};
 use serde_json::Value;
 
 use regex::Regex;
@@ -246,7 +245,7 @@ fn parse_child(parent: &serde_json::Value) -> Vec<Option<Vec<&serde_json::Value>
     let comment_children = parent["data"]["replies"]["data"]["children"].as_array();
     let re = Regex::new(r"(?i)real lpt is always in the comments").unwrap();
 
-    let mut retVec = Vec::new();
+    let mut ret_vec = Vec::new();
 
     match comment_children {
         Some(some) => {
@@ -259,12 +258,12 @@ fn parse_child(parent: &serde_json::Value) -> Vec<Option<Vec<&serde_json::Value>
                     let mut rval = Vec::new();
                     rval.push(parent_obj);
                     rval.push(j);
-                    retVec.push(Some(rval));
+                    ret_vec.push(Some(rval));
                 }
                 else{
                     let res = parse_child(j);
                     for i in res {
-                        retVec.push(i);
+                        ret_vec.push(i);
                     }
                 }
             }
@@ -272,7 +271,7 @@ fn parse_child(parent: &serde_json::Value) -> Vec<Option<Vec<&serde_json::Value>
         _ => {},
     };
 
-    return retVec;
+    return ret_vec;
 }
 
 fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id: &str, title: &str){
@@ -282,7 +281,7 @@ fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id:
     println!("The RSLPT: {}", real_lpt_short);
     println!("Found in {} ({})", lpt_id, title);
 
-    
+
     //println!("Comment: {:?}", comment);
 }
 
