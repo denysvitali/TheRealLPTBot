@@ -1,2 +1,3 @@
 target/
 credentials.yml
+database.sqlite
