@@ -1,7 +1,7 @@
 # TheRealLPTBot
 The Real LPT is always in the comments.
 
-From [an idea](https://www.reddit.com/r/LifeProTips/comments/6ixc7g/lpt_when_sharing_pictures_of_concertsporting/djai7ig/) of [/u/ktkps](https://www.reddit.com/user/ktkps) and [/u/Hi-lo](https://www.reddit.com/user/Hi-lo): we're glad to present you TheRealLPTBot, a bot that reposts real LPT found in comments to [/r/TheRealLPT](https://www.reddit.com/r/TheRealLPT/)
+From [an idea](https://www.reddit.com/r/LifeProTips/comments/6ixc7g/lpt_when_sharing_pictures_of_concertsporting/djai7ig/?context=4) of [/u/ktkps](https://www.reddit.com/user/ktkps) and [/u/Hi-lo](https://www.reddit.com/user/Hi-lo): we're glad to present you TheRealLPTBot, a bot that reposts real LPT found in comments to [/r/TheRealLPT](https://www.reddit.com/r/TheRealLPT/)
 
 # Configuration
 Create a file `credentials.yml` and add the following:
