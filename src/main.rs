@@ -26,7 +26,7 @@ use regex::Regex;
 const VERSION: &'static str = "0.1";
 const DEBUG: bool = false;
 const SUBREDDIT_SOURCE: &'static str = "LifeProTips";
-const SUBREDDIT_DEST: &'static str = "denvit2";
+const SUBREDDIT_DEST: &'static str = "TheRealLPT";
 
 struct Post {
     id: String,
@@ -105,7 +105,7 @@ fn main() {
             rlpt_text   TEXT,
             lpt_poster  TEXT,
             rlpt_poster TEXT
-        )", &[]);
+        )", &[]).expect("Error creating posts table");
     }
 
     println!("Logging in...");
@@ -134,7 +134,13 @@ fn main() {
 fn login(username : &str, password : &str, appid: &str, secret: &str) -> Option<String> {
 
     if DEBUG { println!("Performing authentication..."); }
-    let data = format!("grant_type=password&username={}&password={}", username, password);
+
+    let data : String = form_urlencoded::Serializer::new(String::new())
+        .append_pair("grant_type", "password")
+        .append_pair("username", username)
+        .append_pair("password", password)
+        .finish();
+
     let mut data = data.as_bytes();
     let auth = format!("Authorization: Basic {}", base64::encode(&format!("{}:{}", appid, secret)));
     let mut resp = Vec::new();
@@ -355,7 +361,7 @@ fn parse_real_lpt(lpt: &serde_json::Value, comment : &serde_json::Value, lpt_id:
 
     if !exists{
         println!("Posting...");
-        let postid = post_selftext(SUBREDDIT_DEST, title, &make_text(lpt, comment, title, author), access_token);
+        let postid = post_selftext(SUBREDDIT_DEST, title, &make_text(lpt, lpt_id, comment, title, author), access_token);
         post.id = postid;
         conn.execute("INSERT INTO posts (id, lpt_tid, lpt_cid, lpt_tcid, posted_on, lpt_title, rlpt_text, lpt_poster, rlpt_poster) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         &[&post.id, &post.lpt_tid, &post.lpt_cid, &post.lpt_tcid, &post.posted_on, &post.lpt_title, &post.rlpt_text, &post.lpt_poster, &post.rlpt_poster]).expect("???");
@@ -414,30 +420,16 @@ fn newline() -> String {
     String::from("  \n‍  \n")
 }
 
-/*fn dummy_text() -> String {
-    let mut rv = String::new();
-    rv.push_str(&format!("## RLPT: {}  \n", "This applies to ${item} too"));
-    rv.push_str(&format!("LPT by /u/{} | RLPT by /u/{}", "aaaa", "abcd"));
-    rv.push_str(&newline());
-    rv.push_str(&format!("[LPT Thread](http://reddit.com/r/denvit/) | [RLPT Comment](https://reddit.com/r/denvit)"));
-    rv.push_str(&newline());
-    rv.push_str("^____________________________________________________________________________________________  \n");
-    rv.push_str("^About ^this ^bot:  \n");
-    rv.push_str(&format!("^[Source](https://github.com/denysvitali/TheRealLPTBot) ^| ^[Author](https://reddit.com/u/denvit) ^| ^[aaaa](https://reddit.com/)"));
-
-    rv
-}*/
-
-fn make_text(lpt: &serde_json::Value, comment: &serde_json::Value, title: &str, lpt_author: &str) -> String {
+fn make_text(lpt: &serde_json::Value, lpt_id: &str, comment: &serde_json::Value, title: &str, lpt_author: &str) -> String {
     let mut rv = String::new();
     rv.push_str(&format!("## RLPT: {}  \n", lpt["body"].as_str().unwrap()));
     rv.push_str(&format!("LPT by /u/{} | RLPT by /u/{}", lpt_author, lpt["author"].as_str().unwrap()));
     rv.push_str(&newline());
-    rv.push_str(&format!("[LPT Thread](https://reddit.com/{}) | [RLPT Comment](https://reddit.com/{})", lpt["link_id"].as_str().unwrap(), comment["link_id"].as_str().unwrap()));
+    rv.push_str(&format!("[LPT Thread](https://reddit.com/r/{0}/{1}) | [RLPT Comment](https://reddit.com/r/{0}/comments/{1}/a/{2})", SUBREDDIT_SOURCE, lpt_id, lpt["id"].as_str().unwrap()));
     rv.push_str(&newline());
-    rv.push_str("^____________________________________________________________________________________________  \n");
+    rv.push_str("^___________________________________________________________  \n");
     rv.push_str("^About ^this ^bot:  \n");
-    rv.push_str(&format!("^[Source](https://github.com/denysvitali/TheRealLPTBot) ^| ^[Author](https://reddit.com/u/denvit) ^| ^[aaaa](https://reddit.com/)"));
+    rv.push_str(&format!("^[Source](https://github.com/denysvitali/TheRealLPTBot) ^| ^[Author](https://reddit.com/u/denvit)"));
 
     rv
 }
